@@ -1,0 +1,68 @@
+pip freeze > requirement.txt
+
+
+# requirement.txt
+
+Django==1.9.6
+django-crispy-forms==1.6.0
+django-registration-redux==1.4
+gunicorn==19.4.5
+pbr==1.9.1
+Pillow==3.2.0
+six==1.10.0
+stevedore==1.13.0
+virtualenv==15.0.1
+virtualenv-clone==0.2.6
+virtualenvwrapper==4.7.1
+
+pip install -r requirement.txt
+
+
+# django project directory and permissions
+
+ls -al /webapps/
+total 12
+drwxr-xr-x  3 sagarmatha sagarmatha  .
+drwxr-xr-x 28 root       root        ..
+drwxrwxr-x  8 sagarmatha sagarmatha  django19   #this is project dir
+
+/webapps/django19/<Django application>
+here DJ application name is "Untitled1"
+   
+
+####  cat /usr/bin/gunicorn_start   ####
+
+#!/bin/bash
+
+NAME="untitled1"                                  # Name of the application
+DJANGODIR=/webapps/django19                       # Django project directory
+SOCKFILE=/webapps/django19/run/gunicorn.sock      # we will communicte using this unix socket
+USER=sagarmatha                                   # the user to run as
+GROUP=sagarmatha                                  # the group to run as
+NUM_WORKERS=3                                     # how many worker processes should Gunicorn spawn
+DJANGO_SETTINGS_MODULE=untitled1.settings             # which settings file should Django use
+DJANGO_WSGI_MODULE=untitled1.wsgi                     # WSGI module name
+
+echo "Starting $NAME as `whoami`"
+
+# Activate the virtual environment
+cd $DJANGODIR
+source /home/sagarmatha/VE/bin/activate
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+export PYTHONPATH=$DJANGODIR:$PYTHONPATH
+
+# Create the run directory if it doesn't exist
+RUNDIR=$(dirname $SOCKFILE)
+test -d $RUNDIR || mkdir -p $RUNDIR
+
+# Start your Django Unicorn
+# Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
+exec gunicorn ${DJANGO_WSGI_MODULE}:application \
+  --name $NAME \
+  --workers $NUM_WORKERS \
+  --user=$USER --group=$GROUP \
+  --bind=unix:$SOCKFILE \
+  --log-level=debug \
+  --log-file=-
+
+
